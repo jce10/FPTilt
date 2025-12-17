@@ -1,3 +1,5 @@
+# RIDDLED WITH ERRORS DO NOT USE!!!!
+
 # User Guide for the Focal Plane Detector Tilt Correction Scripts
 
 This collection of python scripts is aimed to find the tilt angle (relative to the wires), $\alpha$, of the focal plane detector as well as the distance between the focal plane and any predetermined origin, H, according to the method described in https://doi.org/10.1016/0029-554X(75)90121-4. The overall scheme of the scripts is to find the optimal H values (while the tilt angle is set parallel to the wires, i.e. $\alpha$ = 0.0) of several peaks of the position spectrum such that the FWHM of each peak is smallest at its corresponding optimal H value. A line can then be drawn such that it intersects all optimal values of H, and the slope of this line will correspond to the correct value of $\alpha$. The rest of this document is meant to describe the functionality of each script and the overall scheme of how the scripts are meant to be used together. At any point, you can use the "-h" option to see the arguments that each script takes.
