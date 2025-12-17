@@ -97,12 +97,14 @@ if __name__ == '__main__':
 
     
     # 🟢 YOU control this for each new run
-    run_name = "15deg_138kG_a0"
+    # run_name = "15deg_138kG_a0"
+    run_name = "15deg_138kG_total_a0"
 
 
     # corresponding parquet file
     # parquet_path = "/home/jce18b/Esparza_SPS/2025_06_13C_campaign/built/40deg_12.9kG_total_cut.parquet"
-    parquet_path = "/home/jce18b/Esparza_SPS/2025_06_13C_campaign/built/15deg_13.85kG_300s_cut.parquet"
+    # parquet_path = "/home/jce18b/Esparza_SPS/2025_06_13C_campaign/built/15deg_13.85kG_300s_cut.parquet"
+    parquet_path = "/home/jce18b/Esparza_SPS/2025_06_13C_campaign/built/15deg_13.85kG_total_cut.parquet"
     outputs_root = "/home/jce18b/Programs/FPTilt/outputs"
 
 

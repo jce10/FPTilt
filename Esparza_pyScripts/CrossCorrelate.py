@@ -20,7 +20,7 @@ def double_gauss(x, A1, mu1, sigma1, A2, mu2, sigma2, C):
 
 
 # --- Load CSV spectrum as histogram ---
-def load_csv_spectrum(path, bins=600, range=(-300, 300)):
+def load_csv_spectrum(path, bins=800, range=(-400, 400)):
     df = pl.read_csv(path)
     xf = df["xf"].to_numpy()
     hist_vals, bin_edges = np.histogram(xf, bins=bins, range=range)
@@ -178,6 +178,35 @@ def analyze_run(outputs_root, run_name):
     sigma_fit = np.polyval(coeffs, H_fit)
     fit_text = f"σ(H) fit: {coeffs[0]:.3f}*H³ + {coeffs[1]:.3f}*H² + {coeffs[2]:.3f}*H + {coeffs[3]:.3f}"
 
+# --- Linear fit for centroid vs H ---
+    coeffs_mu = np.polyfit(H_vals, mu_vals, 1)   # returns [m, b]
+    m, b = coeffs_mu
+
+    # build a plotting x-range
+    H_lin = np.linspace(min(H_vals), max(H_vals), 200)
+    mu_lin = np.polyval(coeffs_mu, H_lin)
+    fit_text_mu = f"μ(H) fit: {m:.6f}*H + {b:.6f}"
+
+    # angle (signed); use abs() only if you want magnitude
+    alpha_rad = np.arctan(m)
+    alpha_deg = np.degrees(alpha_rad)
+
+    # useful H quantities
+    # H_at_mu0 = -b / m if m != 0 else np.nan        # H where μ(H)=0
+    H_at_mu0 = b * np.cos(alpha_rad)  
+    H_mu0_units = H_at_mu0 * 42.8625  # convert to mm
+
+
+    # print to terminal
+    print("\n--- Centroid (linear) fit ---")
+    print(f"m (slope) = {m:.4f}")
+    print(f"b (intercept) = {b:.4f}")
+    print(f"Angle alpha = {alpha_rad:.4f} rad")
+    print(f"Angle alpha = {alpha_deg:.4f} deg")
+    print(f"Optimal H value fraction : {H_at_mu0:.4f}")
+    print(f"Optimal H value (mm units): {H_mu0_units:.4f} mm")
+
+
     # --- Identify extrema for vertical lines ---
     H_max_A = H_vals[np.argmax(A_vals)]
     H_max_chi2 = H_vals[np.argmax(chi2_vals)]
@@ -190,7 +219,13 @@ def analyze_run(outputs_root, run_name):
     axes[0].plot(H_vals, A_vals, 'o-'); axes[0].set_title("Amplitude vs H"); axes[0].set_xlabel("H"); axes[0].set_ylabel("A")
     axes[0].axvline(H_max_A, color='blue', linestyle='--', label=f'Max A at H={H_max_A:.2f}'); axes[0].legend()
 
-    axes[1].plot(H_vals, mu_vals, 'o-'); axes[1].set_title("Centroid vs H"); axes[1].set_xlabel("H"); axes[1].set_ylabel("μ")
+    # axes[1].plot(H_vals, mu_vals, 'o-'); axes[1].set_title("Centroid vs H"); axes[1].set_xlabel("H"); axes[1].set_ylabel("μ")
+    axes[1].plot(H_vals, mu_vals, 'o', label='data')
+    axes[1].plot(H_lin, mu_lin, '-', label=fit_text_mu)
+    axes[1].set_title("Centroid vs H")
+    axes[1].set_xlabel("H")
+    axes[1].set_ylabel("μ")
+    axes[1].legend()
 
     axes[2].plot(H_vals, sigma_vals, 'o-', label="data"); axes[2].plot(H_fit, sigma_fit, '-', label=fit_text)
     axes[2].set_title("Width vs H"); axes[2].set_xlabel("H"); axes[2].set_ylabel("σ")
@@ -198,11 +233,13 @@ def analyze_run(outputs_root, run_name):
 
     axes[3].plot(H_vals, C_vals, 'o-'); axes[3].set_title("Background vs H"); axes[3].set_xlabel("H"); axes[3].set_ylabel("C")
 
-    axes[4].plot(H_vals, chi2_vals, 'o-'); axes[4].set_title("Chi² vs H"); axes[4].set_xlabel("H"); axes[4].set_ylabel("Chi²")
-    axes[4].axvline(H_max_chi2, color='orange', linestyle='--', label=f'Max χ² at H={H_max_chi2:.2f}'); axes[4].legend()
+    # axes[4].plot(H_vals, chi2_vals, 'o-'); axes[4].set_title("Chi² vs H"); axes[4].set_xlabel("H"); axes[4].set_ylabel("Chi²")
+    # axes[4].axvline(H_max_chi2, color='orange', linestyle='--', label=f'Max χ² at H={H_max_chi2:.2f}'); axes[4].legend()
+    axes[4].set_visible(False)  # hide unused subplot
 
-    axes[5].plot(H_vals, chi2_red_vals, 'o-'); axes[5].set_title("Reduced Chi² vs H"); axes[5].set_xlabel("H"); axes[5].set_ylabel("χ²_red")
-    axes[5].axvline(H_max_chi2, color='orange', linestyle='--', label=f'Max χ² at H={H_max_chi2:.2f}'); axes[5].legend()
+    # axes[5].plot(H_vals, chi2_red_vals, 'o-'); axes[5].set_title("Reduced Chi² vs H"); axes[5].set_xlabel("H"); axes[5].set_ylabel("χ²_red")
+    # axes[5].axvline(H_max_chi2, color='orange', linestyle='--', label=f'Max χ² at H={H_max_chi2:.2f}'); axes[5].legend()
+    axes[5].set_visible(False)  # hide unused subplot
 
     plt.suptitle(f"Gaussian Fit Parameters vs H for run {run_name}")
     plt.show()
@@ -215,7 +252,7 @@ def analyze_run(outputs_root, run_name):
         "C": C_vals,
         "chi2": chi2_vals,
         "chi2_red": chi2_red_vals,
-        "sigma_fit": (H_fit, sigma_fit)
+        "sigma_fit": (H_fit, sigma_fit),
     }
 
 
@@ -226,10 +263,12 @@ def analyze_run(outputs_root, run_name):
 if __name__ == "__main__":
 
     # 🟢 YOU control this for each new run
-    run_name = "15deg_138kG_a0"
+    # run_name = "15deg_138kG_a0"
+    run_name = "15deg_138kG_total_a0"
 
     # corresponding parquet file
     outputs_root = "/home/jce18b/Programs/FPTilt/outputs"
     
     analyze_run(outputs_root, run_name)
+
 

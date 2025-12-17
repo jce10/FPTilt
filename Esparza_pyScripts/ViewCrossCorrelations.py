@@ -61,72 +61,17 @@ def extract_window(x, y, center, width):
     return x[mask], y[mask]
 
 # 11/21/2025 - tested and working
-# # ==========================================================
-# # Cross-correlation alignment
-# # ==========================================================
-# def cross_correlate_peaks(x_ref, y_ref, x_target, y_target):
-#     corr = np.correlate(y_target - np.mean(y_target),
-#                         y_ref - np.mean(y_ref),
-#                         mode='full')
-#     shift_bins = corr.argmax() - (len(y_target) - 1)
-#     x_shifted = x_target - shift_bins * (x_target[1] - x_target[0])
-#     idx = np.argmin(np.abs(x_shifted - x_ref[np.argmax(y_ref)]))
-#     return x_target[idx]
-
 # ==========================================================
-# Windowed Cross-correlation alignment (peak-specific)
+# Cross-correlation alignment
 # ==========================================================
-def cross_correlate_peaks(x_ref, y_ref, x_target, y_target,
-                          x_click=None, window=15):
-    """
-    Align x_target to x_ref by cross-correlating ONLY a small
-    window around the user-selected reference peak (x_click).
-
-    Parameters
-    ----------
-    x_ref, y_ref : reference histogram
-    x_target, y_target : target histogram
-    x_click : float, clicked x-position on reference spectrum
-    window : half-width of the window around the peak (in xf units)
-
-    Returns
-    -------
-    peak_x_target : float
-        The x-position in the target spectrum corresponding to the clicked peak.
-    """
-
-    if x_click is None:
-        raise ValueError("x_click must be provided for windowed cross-correlation.")
-
-    # Extract window around the peak in reference
-    xw_ref, yw_ref = extract_window(x_ref, y_ref, x_click, width=window)
-    if len(xw_ref) < 3:
-        raise RuntimeError("Reference window too small — increase window size.")
-
-    # Extract roughly the same region in target
-    xw_targ, yw_targ = extract_window(x_target, y_target, x_click, width=window)
-    if len(xw_targ) < 3:
-        raise RuntimeError("Target window too small — peak may be out of range.")
-
-    # Perform correlation on windowed signals
-    corr = np.correlate(yw_targ - np.mean(yw_targ),
-                        yw_ref - np.mean(yw_ref),
+def cross_correlate_peaks(x_ref, y_ref, x_target, y_target):
+    corr = np.correlate(y_target - np.mean(y_target),
+                        y_ref - np.mean(y_ref),
                         mode='full')
-
-    # Determine shift in *bins*
-    shift_bins = corr.argmax() - (len(yw_targ) - 1)
-
-    # Convert bin shift to x shift
-    dx = x_target[1] - x_target[0]
-    x_shift = shift_bins * dx
-
-    # Final aligned position of the peak in the target histogram
-    aligned_x = x_click - x_shift
-
-    # Return nearest x-grid point in target spectrum
-    idx = np.argmin(np.abs(x_target - aligned_x))
+    shift_bins = corr.argmax() - (len(y_target) - 1)
+    x_shifted = x_target - shift_bins * (x_target[1] - x_target[0])
+    idx = np.argmin(np.abs(x_shifted - x_ref[np.argmax(y_ref)]))
     return x_target[idx]
-
 
 # ==========================================================
 # Load CSV and make histogram
@@ -162,9 +107,8 @@ def preview_cross_correlation(outputs_root, run_name):
     spectra = [(x_ref, y_ref)]
     for f in files[1:]:
         x_t, y_t = load_csv_hist(f)
-        # peak_x = cross_correlate_peaks(x_ref, y_ref, x_t, y_t)
-        peak_x = cross_correlate_peaks(x_ref, y_ref, x_t, y_t,
-                               x_click=x_click, window=15)
+        peak_x = cross_correlate_peaks(x_ref, y_ref, x_t, y_t)
+
 
         x_peaks.append(peak_x)
         spectra.append((x_t, y_t))
@@ -209,7 +153,7 @@ if __name__ == "__main__":
 
     # change these as needed
     outputs_root = "/home/jce18b/Programs/FPTilt/outputs"
-    run_name = "15deg_138kG_a0"
+    run_name = "15deg_138kG_total_a0"
 
     peaks, spectra = preview_cross_correlation(outputs_root, run_name)
 
